@@ -59,7 +59,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.smartinventory/com.smartinventory.SmartInventoryApp</mainClass>
+                    <mainClass>com.smartinventory.SmartInventoryApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>
