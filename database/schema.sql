@@ -81,3 +81,55 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
     CONSTRAINT fk_po_items_order FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE,
     CONSTRAINT fk_po_items_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+DELIMITER $$
+DROP TRIGGER IF EXISTS products_before_insert$$
+DROP TRIGGER IF EXISTS products_before_update$$
+DROP FUNCTION IF EXISTS inventory_status$$
+CREATE FUNCTION inventory_status(stock_quantity INT)
+RETURNS VARCHAR(30)
+DETERMINISTIC
+BEGIN
+    IF stock_quantity = 0 THEN
+        RETURN 'OUT_OF_STOCK';
+    ELSEIF stock_quantity <= 5 THEN
+        RETURN 'LOW_STOCK';
+    END IF;
+    RETURN 'IN_STOCK';
+END$$
+
+CREATE TRIGGER products_before_insert
+BEFORE INSERT ON products
+FOR EACH ROW
+BEGIN
+    SET NEW.status = inventory_status(NEW.quantity);
+END$$
+
+CREATE TRIGGER products_before_update
+BEFORE UPDATE ON products
+FOR EACH ROW
+BEGIN
+    SET NEW.status = inventory_status(NEW.quantity);
+END$$
+DELIMITER ;
+
+INSERT INTO users (username, password_hash, role) VALUES
+('admin', '00112233445566778899aabbccddeeff:0e14da9d8aadc6fc27decd1b05097cd4312903005cbece01043ee2d4316b2398', 'ADMIN'),
+('employee', '00112233445566778899aabbccddeeff:0e14da9d8aadc6fc27decd1b05097cd4312903005cbece01043ee2d4316b2398', 'EMPLOYEE')
+ON DUPLICATE KEY UPDATE username = VALUES(username);
+
+INSERT INTO suppliers (name, email, phone, address) VALUES
+('Tech Supply', 'sales@techsupply.example', '+383 44 100 200', 'Prishtina Industrial Zone'),
+('Cable House', 'orders@cablehouse.example', '+383 45 220 330', 'Rruga B, Prishtina'),
+('Paper Pro', 'contact@paperpro.example', '+383 49 500 600', 'Ferizaj Business Park'),
+('LightCo', 'support@lightco.example', '+383 43 700 800', 'Peja Center')
+ON DUPLICATE KEY UPDATE email = VALUES(email), phone = VALUES(phone), address = VALUES(address);
+
+INSERT INTO products (name, category, quantity, price, supplier_id, supplier, status) VALUES
+('Wireless Mouse', 'Electronics', 18, 14.99, (SELECT id FROM suppliers WHERE name = 'Tech Supply'), 'Tech Supply', 'IN_STOCK'),
+('USB-C Cable', 'Electronics', 4, 7.50, (SELECT id FROM suppliers WHERE name = 'Cable House'), 'Cable House', 'LOW_STOCK'),
+('Notebook A5', 'Office', 40, 2.20, (SELECT id FROM suppliers WHERE name = 'Paper Pro'), 'Paper Pro', 'IN_STOCK'),
+('Desk Lamp', 'Office', 0, 24.99, (SELECT id FROM suppliers WHERE name = 'LightCo'), 'LightCo', 'OUT_OF_STOCK')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+UPDATE products SET status = inventory_status(quantity);
