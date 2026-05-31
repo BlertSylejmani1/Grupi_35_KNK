@@ -188,3 +188,71 @@ public class DashboardController {
             supplierEmailColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().email()));
             supplierPhoneColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().phone()));
             supplierAddressColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().address()));
+            poIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().id()));
+                    poSupplierColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().supplier()));
+                    poProductColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().productName()));
+                    poQuantityColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().quantity()));
+                    poStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().status()));
+                    poCreatedByColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().createdBy()));
+                    poCreatedAtColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().createdAt().format(auditFormatter)));
+                    historyTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().createdAt().format(auditFormatter)));
+                    historyProductColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().productId()));
+                    historyOldColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().oldQuantity()));
+                    historyNewColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().newQuantity()));
+                    historyTypeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().changeType()));
+                    historyByColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().changedBy()));
+                    historyReasonColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().reason()));
+                    notificationTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().createdAt().format(auditFormatter)));
+                    notificationTypeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().type()));
+                    notificationMessageColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().message()));
+                    notificationEmailColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(String.valueOf(data.getValue().emailSent())));
+
+                    searchDebounce.setOnFinished(event -> applySmartSearch());
+                    searchField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    advancedNameField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    advancedSupplierField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    minPriceField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    maxPriceField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    minStockField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    maxStockField.textProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    categoryFilter.valueProperty().addListener((obs, oldValue, newValue) -> searchDebounce.playFromStart());
+                    productTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, product) -> {
+                        loadStockHistory(product);
+                    });
+                    Platform.runLater(() -> {
+                        rootPane.getScene().getAccelerators().put(new KeyCodeCombination(KeyCode.F1), this::showHelp);
+                        rootPane.getScene().addEventFilter(javafx.scene.input.InputEvent.ANY, event -> sessionTimeout.playFromStart());
+                        applyTheme(preferences.getBoolean("darkMode", false));
+                        sessionTimeout.setOnFinished(event -> logout());
+                        sessionTimeout.playFromStart();
+                    });
+                    startClock();
+                    refresh();
+                }
+
+                @FXML
+                private void refresh() {
+                    String databaseStatus = Database.isAvailable() ? LanguageService.get("status.connected") : LanguageService.get("status.disconnected");
+                    dbStatusLabel.setText(databaseStatus);
+                    footerDbStatusLabel.setText(databaseStatus);
+                    loadProducts();
+                    loadCategories();
+                    loadReports();
+                    loadUsers();
+                    loadAuditLogs();
+                    loadSuppliers();
+                    loadPurchaseOrders();
+                    loadNotifications();
+                }
+
+                @FXML
+                private void clearFilter() {
+                    searchField.clear();
+                    advancedNameField.clear();
+                    advancedSupplierField.clear();
+                    minPriceField.clear();
+                    maxPriceField.clear();
+                    minStockField.clear();
+                    maxStockField.clear();
+                    categoryFilter.getSelectionModel().clearSelection();
+                }
