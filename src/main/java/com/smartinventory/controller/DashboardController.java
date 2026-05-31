@@ -31,6 +31,7 @@ import javafx.util.Duration;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.prefs.Preferences;
 
 public class DashboardController {
@@ -742,6 +743,173 @@ public class DashboardController {
         }
         try {
             userTable.setItems(FXCollections.observableArrayList(userRepository.findAll()));
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+    private void loadAuditLogs() {
+        if (!SessionService.requireUser().isAdmin()) {
+            return;
+        }
+        try {
+            auditTable.setItems(FXCollections.observableArrayList(auditLogRepository.latest()));
+        } catch (Exception ex) {
+            auditTable.setItems(FXCollections.emptyObservableList());
+        }
+    }
+
+    private XYChart.Series<String, Number> series(String name, Map<String, Integer> data) {
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName(name);
+        data.forEach((key, value) -> series.getData().add(new XYChart.Data<>(key, value)));
+        return series;
+    }
+
+    private void openProductDialog(Product product) {
+        Dialog<Product> dialog = new Dialog<>();
+        dialog.setTitle(product.getId() == 0 ? LanguageService.get("product.add") : LanguageService.get("product.edit"));
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        TextField name = new TextField(product.getName());
+        TextField category = new TextField(product.getCategory());
+        TextField quantity = new TextField(product.getId() == 0 ? "" : String.valueOf(product.getQuantity()));
+        TextField price = new TextField(product.getId() == 0 ? "" : String.valueOf(product.getPrice()));
+        ComboBox<Supplier> supplier = new ComboBox<>();
+        try {
+            supplier.setItems(FXCollections.observableArrayList(supplierRepository.findAll()));
+            supplier.getItems().stream().filter(item -> item.id() == product.getSupplierId()).findFirst().ifPresent(supplier::setValue);
+        } catch (Exception ignored) {
+        }
+        TextField supplierFallback = new TextField(product.getSupplier());
+        Label status = new Label(LanguageService.get("product.statusAuto"));
+        int oldQuantity = product.getQuantity();
+
+        GridPane grid = new GridPane();
+        grid.getStyleClass().add("form-grid");
+        grid.addRow(0, new Label(LanguageService.get("product.name")), name);
+        grid.addRow(1, new Label(LanguageService.get("product.category")), category);
+        grid.addRow(2, new Label(LanguageService.get("product.quantity")), quantity);
+        grid.addRow(3, new Label(LanguageService.get("product.price")), price);
+        grid.addRow(4, new Label(LanguageService.get("product.supplier")), supplier);
+        grid.addRow(5, new Label(LanguageService.get("supplier.manual")), supplierFallback);
+        grid.addRow(6, new Label(LanguageService.get("product.status")), status);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button != ButtonType.OK) {
+                return null;
+            }
+            try {
+                String supplierName = supplier.getValue() != null ? supplier.getValue().name() : supplierFallback.getText();
+                validateProduct(name.getText(), category.getText(), quantity.getText(), price.getText(), supplierName);
+                product.setName(name.getText().trim());
+                product.setCategory(category.getText().trim());
+                product.setQuantity(Integer.parseInt(quantity.getText().trim()));
+                product.setPrice(new BigDecimal(price.getText().trim()));
+                product.setSupplierId(supplier.getValue() == null ? 0 : supplier.getValue().id());
+                product.setSupplier(supplierName.trim());
+                return product;
+            } catch (IllegalArgumentException ex) {
+                AlertService.error(ex.getMessage());
+                return null;
+            }
+        });
+
+        dialog.showAndWait().ifPresent(savedProduct -> saveProduct(savedProduct, oldQuantity));
+    }
+
+    private void validateProduct(String name, String category, String quantity, String price, String supplier) {
+        if (name.isBlank() || category.isBlank() || quantity.isBlank() || price.isBlank() || supplier.isBlank()) {
+            throw new IllegalArgumentException(LanguageService.get("validation.required"));
+        }
+        try {
+            int parsedQuantity = Integer.parseInt(quantity.trim());
+            BigDecimal parsedPrice = new BigDecimal(price.trim());
+            if (parsedQuantity < 0 || parsedPrice.signum() < 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(LanguageService.get("validation.numeric"));
+        }
+    }
+
+    private void saveProduct(Product product, int oldQuantity) {
+        try {
+            if (productRepository.existsByName(product.getName(), product.getId())) {
+                AlertService.error(LanguageService.get("validation.duplicate"));
+                return;
+            }
+            if (product.getId() == 0) {
+                productRepository.insert(product);
+                stockHistoryRepository.record(product.getId(), 0, product.getQuantity(), SessionService.requireUser().username(), "RESTOCK", "Initial stock");
+                auditLogRepository.record("CREATE", "PRODUCT", product.getName());
+            } else {
+                productRepository.update(product);
+                if (oldQuantity != product.getQuantity()) {
+                    stockHistoryRepository.record(product.getId(), oldQuantity, product.getQuantity(), SessionService.requireUser().username(), "UPDATE", "Product edit");
+                }
+                auditLogRepository.record("UPDATE", "PRODUCT", product.getName());
+            }
+            if (product.getQuantity() <= 5) {
+                boolean emailSent = stockAlertService.notifyIfNeeded(product);
+                notificationRepository.stockAlert(product, emailSent);
+                auditLogRepository.record("NOTIFY", "STOCK_ALERT", product.getName() + " / emailSent=" + emailSent);
+                if (emailSent) {
+                    auditLogRepository.record("EMAIL", "STOCK_ALERT", product.getName() + " / " + product.getStatus());
+                } else {
+                    auditLogRepository.record("EMAIL_FAILED", "STOCK_ALERT", EmailService.lastError());
+                }
+            }
+            refresh();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    private void openSupplierDialog(Supplier supplier) {
+        Dialog<Supplier> dialog = new Dialog<>();
+        dialog.setTitle(supplier.id() == 0 ? LanguageService.get("supplier.add") : LanguageService.get("supplier.edit"));
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        TextField name = new TextField(supplier.name());
+        TextField email = new TextField(supplier.email());
+        TextField phone = new TextField(supplier.phone());
+        TextField address = new TextField(supplier.address());
+        GridPane grid = new GridPane();
+        grid.getStyleClass().add("form-grid");
+        grid.addRow(0, new Label(LanguageService.get("supplier.name")), name);
+        grid.addRow(1, new Label(LanguageService.get("supplier.email")), email);
+        grid.addRow(2, new Label(LanguageService.get("supplier.phone")), phone);
+        grid.addRow(3, new Label(LanguageService.get("supplier.address")), address);
+        dialog.getDialogPane().setContent(grid);
+        dialog.setResultConverter(button -> {
+            if (button != ButtonType.OK) {
+                return null;
+            }
+            if (name.getText().isBlank() || email.getText().isBlank() || phone.getText().isBlank() || address.getText().isBlank()) {
+                AlertService.error(LanguageService.get("validation.required"));
+                return null;
+            }
+            return new Supplier(supplier.id(), name.getText().trim(), email.getText().trim(), phone.getText().trim(), address.getText().trim());
+        });
+        dialog.showAndWait().ifPresent(value -> {
+            try {
+                Supplier saved = supplierRepository.save(value);
+                auditLogRepository.record(value.id() == 0 ? "CREATE" : "UPDATE", "SUPPLIER", saved.name());
+                refresh();
+            } catch (Exception ex) {
+                AlertService.error(LanguageService.get("error.database"));
+            }
+        });
+    }
+
+    private void saveStockAdjustment(Product product, StockAdjustment adjustment) {
+        try {
+            int oldQuantity = product.getQuantity();
+            product.setQuantity(adjustment.quantity());
+            productRepository.update(product);
+            stockHistoryRepository.record(product.getId(), oldQuantity, adjustment.quantity(), SessionService.requireUser().username(), adjustment.type(), adjustment.reason());
+            auditLogRepository.record("ADJUST", "STOCK", product.getName() + ": " + oldQuantity + " -> " + adjustment.quantity() + " / " + adjustment.reason());
+            refresh();
         } catch (Exception ex) {
             AlertService.error(LanguageService.get("error.database"));
         }
