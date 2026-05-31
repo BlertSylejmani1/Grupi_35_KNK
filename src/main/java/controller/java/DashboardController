@@ -256,3 +256,126 @@ public class DashboardController {
                     maxStockField.clear();
                     categoryFilter.getSelectionModel().clearSelection();
                 }
+                @FXML
+                    private void addProduct() {
+                        if (!ensureAdmin()) {
+                            return;
+                        }
+                        openProductDialog(new Product());
+                    }
+
+                    @FXML
+                    private void editProduct() {
+                        if (!ensureAdmin()) {
+                            return;
+                        }
+                        Product selected = productTable.getSelectionModel().getSelectedItem();
+                        if (selected == null) {
+                            AlertService.info(LanguageService.get("product.select"));
+                            return;
+                        }
+                        openProductDialog(new Product(selected.getId(), selected.getName(), selected.getCategory(), selected.getQuantity(), selected.getPrice(),
+                                selected.getSupplierId(), selected.getSupplier(), selected.getStatus()));
+                    }
+
+                    @FXML
+                    private void deleteProduct() {
+                        if (!ensureAdmin()) {
+                            return;
+                        }
+                        Product selected = productTable.getSelectionModel().getSelectedItem();
+                        if (selected == null) {
+                            AlertService.info(LanguageService.get("product.select"));
+                            return;
+                        }
+                        try {
+                            productRepository.delete(selected.getId());
+                            auditLogRepository.record("DELETE", "PRODUCT", selected.getName());
+                            refresh();
+                        } catch (Exception ex) {
+                            AlertService.error(LanguageService.get("error.database"));
+                        }
+                    }
+
+                    @FXML
+                    private void showQrCode() {
+                        Product selected = productTable.getSelectionModel().getSelectedItem();
+                        if (selected == null) {
+                            AlertService.info(LanguageService.get("product.select"));
+                            return;
+                        }
+                        ImageView imageView = new ImageView(QrCodeService.forProduct(selected));
+                        TextArea qrText = new TextArea(QrCodeService.payload(selected));
+                        qrText.setEditable(false);
+                        qrText.setWrapText(true);
+                        qrText.setPrefRowCount(8);
+                        VBox content = new VBox(12, imageView, qrText);
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle(LanguageService.get("qr.title"));
+                        alert.setHeaderText(selected.getName());
+                        alert.getDialogPane().setContent(content);
+                        alert.showAndWait();
+                    }
+
+                    @FXML
+                    private void showHelp() {
+                        Dialog<Void> dialog = new Dialog<>();
+                        dialog.setTitle(LanguageService.get("menu.help.open"));
+                        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+                        TextArea helpText = new TextArea(LanguageService.get("help.text"));
+                        helpText.setEditable(false);
+                        helpText.setWrapText(true);
+                        helpText.setPrefColumnCount(72);
+                        helpText.setPrefRowCount(18);
+                        dialog.getDialogPane().setContent(helpText);
+                        dialog.showAndWait();
+                    }
+
+                    @FXML
+                    private void showProductsTab() {
+                        selectTab(productsTab);
+                    }
+
+                    @FXML
+                    private void showReportsTab() {
+                        selectTab(reportsTab);
+                    }
+
+                    @FXML
+                    private void showSettingsTab() {
+                        selectTab(settingsTab);
+                    }
+
+                    @FXML
+                    private void showUsersTab() {
+                        if (ensureAdmin()) {
+                            selectTab(usersTab);
+                        }
+                    }
+
+                    @FXML
+                    private void showAuditTab() {
+                        if (ensureAdmin()) {
+                            selectTab(auditTab);
+                        }
+                    }
+
+                    @FXML
+                    private void showSuppliersTab() {
+                        selectTab(suppliersTab);
+                    }
+
+                    @FXML
+                    private void showPurchaseOrdersTab() {
+                        selectTab(purchaseOrdersTab);
+                    }
+
+                    @FXML
+                    private void showStockHistoryTab() {
+                        selectTab(stockHistoryTab);
+                    }
+
+                    @FXML
+                    private void showNotificationsTab() {
+                        selectTab(notificationsTab);
+                    }
