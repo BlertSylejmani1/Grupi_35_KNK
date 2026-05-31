@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class UserRepository {
+public class  UserRepository {
     public Optional<User> authenticate(String username, String password) throws SQLException {
         String sql = "SELECT id, username, password_hash, role, failed_attempts, locked_until FROM users WHERE username = ?";
         try (Connection connection = Database.getConnection();
