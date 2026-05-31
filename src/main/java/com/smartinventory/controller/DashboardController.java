@@ -30,6 +30,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.prefs.Preferences;
@@ -914,3 +915,120 @@ public class DashboardController {
             AlertService.error(LanguageService.get("error.database"));
         }
     }
+
+    private void updatePurchaseOrderStatus(String status) {
+        if (!ensureAdmin()) {
+            return;
+        }
+        PurchaseOrder selected = purchaseOrderTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertService.info(LanguageService.get("po.select"));
+            return;
+        }
+        try {
+            purchaseOrderRepository.updateStatus(selected.id(), status);
+            auditLogRepository.record("UPDATE", "PURCHASE_ORDER", "PO #" + selected.id() + " -> " + status);
+            refresh();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    private void applyTheme(boolean darkMode) {
+        rootPane.getStyleClass().remove("dark-root");
+        if (darkMode) {
+            rootPane.getStyleClass().add("dark-root");
+        }
+        themeButton.setText(LanguageService.get(darkMode ? "theme.light" : "theme.dark"));
+    }
+
+    private BigDecimal decimalOrNull(String value) {
+        return value == null || value.isBlank() ? null : new BigDecimal(value.trim());
+    }
+
+    private Integer integerOrNull(String value) {
+        return value == null || value.isBlank() ? null : Integer.parseInt(value.trim());
+    }
+
+    private void startClock() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> timeLabel.setText(LocalDateTime.now().format(formatter))));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+    }
+
+    private void openUserDialog(User user) {
+        Dialog<UserForm> dialog = new Dialog<>();
+        dialog.setTitle(user.id() == 0 ? LanguageService.get("user.add") : LanguageService.get("user.edit"));
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        TextField username = new TextField(user.username());
+        PasswordField password = new PasswordField();
+        password.setPromptText(user.id() == 0 ? LanguageService.get("user.password") : LanguageService.get("user.passwordOptional"));
+        ComboBox<Role> role = new ComboBox<>(FXCollections.observableArrayList(Role.values()));
+        role.setValue(user.role());
+
+        GridPane grid = new GridPane();
+        grid.getStyleClass().add("form-grid");
+        grid.addRow(0, new Label(LanguageService.get("login.username")), username);
+        grid.addRow(1, new Label(LanguageService.get("login.password")), password);
+        grid.addRow(2, new Label(LanguageService.get("user.role")), role);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(button -> {
+            if (button != ButtonType.OK) {
+                return null;
+            }
+            String cleanUsername = username.getText().trim();
+            String cleanPassword = password.getText();
+            if (cleanUsername.isBlank() || (user.id() == 0 && cleanPassword.isBlank())) {
+                AlertService.error(LanguageService.get("validation.required"));
+                return null;
+            }
+            if (cleanPassword.length() > 0 && cleanPassword.length() < 6) {
+                AlertService.error(LanguageService.get("user.passwordShort"));
+                return null;
+            }
+            return new UserForm(new User(user.id(), cleanUsername, role.getValue()), cleanPassword);
+        });
+
+        dialog.showAndWait().ifPresent(this::saveUser);
+    }
+
+    private void saveUser(UserForm form) {
+        try {
+            if (userRepository.existsByUsername(form.user().username(), form.user().id())) {
+                AlertService.error(LanguageService.get("user.duplicate"));
+                return;
+            }
+            if (form.user().id() == 0) {
+                User created = userRepository.create(form.user().username(), form.password(), form.user().role());
+                auditLogRepository.record("CREATE", "USER", created.username() + " / " + created.role());
+            } else {
+                userRepository.update(form.user(), form.password());
+                auditLogRepository.record("UPDATE", "USER", form.user().username() + " / " + form.user().role());
+            }
+            refresh();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    private boolean ensureAdmin() {
+        if (!SessionService.requireUser().isAdmin()) {
+            AlertService.info(LanguageService.get("auth.adminOnly"));
+            return false;
+        }
+        return true;
+    }
+
+    private void selectTab(Tab tab) {
+        mainTabs.getSelectionModel().select(tab);
+    }
+
+    private record UserForm(User user, String password) {
+    }
+
+    private record StockAdjustment(int quantity, String type, String reason) {
+    }
+}
