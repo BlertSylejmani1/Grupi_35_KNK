@@ -379,4 +379,126 @@ public class DashboardController {
                     private void showNotificationsTab() {
                         selectTab(notificationsTab);
                     }
-                    
+                    @FXML
+                        private void showSelectedProductHistory() {
+                            Product selected = productTable.getSelectionModel().getSelectedItem();
+                            if (selected == null) {
+                                AlertService.info(LanguageService.get("product.select"));
+                                return;
+                            }
+                            loadStockHistory(selected);
+                            selectTab(stockHistoryTab);
+                        }
+
+                        @FXML
+                        private void advancedSearch() {
+                            applySmartSearch();
+                        }
+
+                        private void applySmartSearch() {
+                            try {
+                                String productName = advancedNameField.getText().isBlank() ? searchField.getText() : advancedNameField.getText();
+                                productTable.setItems(FXCollections.observableArrayList(productRepository.advancedSearch(
+                                        productName,
+                                        categoryFilter.getValue(),
+                                        advancedSupplierField.getText(),
+                                        decimalOrNull(minPriceField.getText()),
+                                        decimalOrNull(maxPriceField.getText()),
+                                        integerOrNull(minStockField.getText()),
+                                        integerOrNull(maxStockField.getText())
+                                )));
+                            } catch (NumberFormatException ex) {
+                                // Ignore partial numeric input while the user is typing.
+                            } catch (Exception ex) {
+                                AlertService.error(LanguageService.get("error.database"));
+                            }
+                        }
+
+                        @FXML
+                        private void addSupplier() {
+                            if (ensureAdmin()) {
+                                openSupplierDialog(new Supplier(0, "", "", "", ""));
+                            }
+                        }
+
+                        @FXML
+                        private void editSupplier() {
+                            if (!ensureAdmin()) {
+                                return;
+                            }
+                            Supplier selected = supplierTable.getSelectionModel().getSelectedItem();
+                            if (selected == null) {
+                                AlertService.info(LanguageService.get("supplier.select"));
+                                return;
+                            }
+                            openSupplierDialog(selected);
+                        }
+
+                        @FXML
+                        private void deleteSupplier() {
+                            if (!ensureAdmin()) {
+                                return;
+                            }
+                            Supplier selected = supplierTable.getSelectionModel().getSelectedItem();
+                            if (selected == null) {
+                                AlertService.info(LanguageService.get("supplier.select"));
+                                return;
+                            }
+                            try {
+                                supplierRepository.delete(selected.id());
+                                auditLogRepository.record("DELETE", "SUPPLIER", selected.name());
+                                refresh();
+                            } catch (Exception ex) {
+                                AlertService.error(LanguageService.get("error.database"));
+                            }
+                        }
+
+                        @FXML
+                        private void createReorder() {
+                            if (!ensureAdmin()) {
+                                return;
+                            }
+                            Product selected = productTable.getSelectionModel().getSelectedItem();
+                            if (selected == null) {
+                                AlertService.info(LanguageService.get("product.select"));
+                                return;
+                            }
+                            if (selected.getQuantity() > 5) {
+                                AlertService.info(LanguageService.get("po.lowStockOnly"));
+                                return;
+                            }
+                            try {
+                                int orderId = purchaseOrderRepository.createForProduct(selected, Math.max(10, 20 - selected.getQuantity()));
+                                auditLogRepository.record("CREATE", "PURCHASE_ORDER", "PO #" + orderId + " for " + selected.getName());
+                                refresh();
+                                selectTab(purchaseOrdersTab);
+                            } catch (Exception ex) {
+                                AlertService.error(LanguageService.get("error.database"));
+                            }
+                        }
+
+                        @FXML
+                        private void createReordersForLowStock() {
+                            if (!ensureAdmin()) {
+                                return;
+                            }
+                            try {
+                                int created = 0;
+                                for (Product product : productRepository.advancedSearch("", null, "", null, null, null, 5)) {
+                                    purchaseOrderRepository.createForProduct(product, Math.max(10, 20 - product.getQuantity()));
+                                    created++;
+                                }
+                                auditLogRepository.record("CREATE", "PURCHASE_ORDER", created + " low-stock reorder(s)");
+                                refresh();
+                                selectTab(purchaseOrdersTab);
+                                AlertService.info(LanguageService.get("po.bulkCreated") + " " + created);
+                            } catch (Exception ex) {
+                                AlertService.error(LanguageService.get("error.database"));
+                            }
+                        }
+
+                        @FXML
+                        private void approvePurchaseOrder() {
+                            updatePurchaseOrderStatus("APPROVED");
+                        }
+                    }
