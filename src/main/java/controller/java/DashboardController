@@ -502,3 +502,88 @@ public class DashboardController {
                             updatePurchaseOrderStatus("APPROVED");
                         }
                     }
+    @FXML
+    private void receivePurchaseOrder() {
+        if (!ensureAdmin()) {
+            return;
+        }
+        PurchaseOrder selected = purchaseOrderTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertService.info(LanguageService.get("po.select"));
+            return;
+        }
+        try {
+            String result = purchaseOrderRepository.receive(selected.id(), SessionService.requireUser().username());
+            auditLogRepository.record("RECEIVE", "PURCHASE_ORDER", "PO #" + selected.id() + " / " + result);
+            refresh();
+            AlertService.info(LanguageService.get("po.received") + " " + result);
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    @FXML
+    private void adjustStock() {
+        if (!ensureAdmin()) {
+            return;
+        }
+        Product selected = productTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertService.info(LanguageService.get("product.select"));
+            return;
+        }
+        Dialog<StockAdjustment> dialog = new Dialog<>();
+        dialog.setTitle(LanguageService.get("stock.adjust"));
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        TextField quantity = new TextField(String.valueOf(selected.getQuantity()));
+        TextField reason = new TextField();
+        ComboBox<String> type = new ComboBox<>(FXCollections.observableArrayList("RESTOCK", "SALE", "UPDATE"));
+        type.setValue("UPDATE");
+        GridPane grid = new GridPane();
+        grid.getStyleClass().add("form-grid");
+        grid.addRow(0, new Label(LanguageService.get("product.quantity")), quantity);
+        grid.addRow(1, new Label(LanguageService.get("history.type")), type);
+        grid.addRow(2, new Label(LanguageService.get("history.reason")), reason);
+        dialog.getDialogPane().setContent(grid);
+        dialog.setResultConverter(button -> {
+            if (button != ButtonType.OK) {
+                return null;
+            }
+            try {
+                int newQuantity = Integer.parseInt(quantity.getText().trim());
+                if (newQuantity < 0 || reason.getText().isBlank()) {
+                    throw new NumberFormatException();
+                }
+                return new StockAdjustment(newQuantity, type.getValue(), reason.getText().trim());
+            } catch (NumberFormatException ex) {
+                AlertService.error(LanguageService.get("validation.numeric"));
+                return null;
+            }
+        });
+        dialog.showAndWait().ifPresent(adjustment -> saveStockAdjustment(selected, adjustment));
+    }
+
+    @FXML
+    private void exportPdf() {
+        try {
+            AlertService.info(LanguageService.get("export.created") + " " + exportService.exportTextPdf());
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("export.failed"));
+        }
+    }
+
+    @FXML
+    private void exportExcel() {
+        try {
+            AlertService.info(LanguageService.get("export.created") + " " + exportService.exportExcel());
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("export.failed"));
+        }
+    }
+
+    @FXML
+    private void toggleTheme() {
+        boolean darkMode = !preferences.getBoolean("darkMode", false);
+        preferences.putBoolean("darkMode", darkMode);
+        applyTheme(darkMode);
+    }
