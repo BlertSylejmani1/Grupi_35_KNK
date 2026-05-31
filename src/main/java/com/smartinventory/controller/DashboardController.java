@@ -585,3 +585,164 @@ public class DashboardController {
         preferences.putBoolean("darkMode", darkMode);
         applyTheme(darkMode);
     }
+    @FXML
+    private void addUser() {
+        if (!ensureAdmin()) {
+            return;
+        }
+        openUserDialog(new User(0, "", Role.EMPLOYEE));
+    }
+
+    @FXML
+    private void editUser() {
+        if (!ensureAdmin()) {
+            return;
+        }
+        User selected = userTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertService.info(LanguageService.get("user.select"));
+            return;
+        }
+        openUserDialog(selected);
+    }
+
+    @FXML
+    private void deleteUser() {
+        if (!ensureAdmin()) {
+            return;
+        }
+        User selected = userTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            AlertService.info(LanguageService.get("user.select"));
+            return;
+        }
+        if (selected.id() == SessionService.requireUser().id()) {
+            AlertService.error(LanguageService.get("user.cannotDeleteSelf"));
+            return;
+        }
+        try {
+            userRepository.delete(selected.id());
+            auditLogRepository.record("DELETE", "USER", selected.username());
+            refresh();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    @FXML
+    private void english() {
+        changeLanguage("en");
+    }
+
+    @FXML
+    private void albanian() {
+        changeLanguage("sq");
+    }
+
+    @FXML
+    private void logout() {
+        try {
+            SessionService.logout();
+            SmartInventoryApp.showLogin();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.open.login"));
+        }
+    }
+
+    private void changeLanguage(String languageTag) {
+        try {
+            LanguageService.setLanguage(languageTag);
+            SmartInventoryApp.showDashboardPreservingWindow();
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.open.dashboard"));
+        }
+    }
+
+    private void loadProducts() {
+        try {
+            productTable.setItems(FXCollections.observableArrayList(productRepository.findAll(searchField.getText(), categoryFilter.getValue())));
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    private void loadCategories() {
+        try {
+            String selected = categoryFilter.getValue();
+            categoryFilter.setItems(FXCollections.observableArrayList(productRepository.categories()));
+            categoryFilter.setValue(selected);
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
+
+    private void loadReports() {
+        try {
+            totalProductsLabel.setText(String.valueOf(reportRepository.totalProducts()));
+            lowStockLabel.setText(String.valueOf(reportRepository.lowStockProducts()));
+            outStockLabel.setText(String.valueOf(reportRepository.outOfStockProducts()));
+            totalSuppliersLabel.setText(String.valueOf(reportRepository.totalSuppliers()));
+            totalUsersLabel.setText(String.valueOf(reportRepository.totalUsers()));
+            categoryPieChart.setData(FXCollections.observableArrayList(reportRepository.byCategory().entrySet().stream()
+                    .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))
+                    .toList()));
+            stockBarChart.getData().clear();
+            stockBarChart.getData().add(series(LanguageService.get("reports.stock"), reportRepository.stockByCategory()));
+            stockLineChart.getData().clear();
+            stockLineChart.getData().add(series(LanguageService.get("reports.stock"), reportRepository.stockByCategory()));
+            activityFeedList.setItems(FXCollections.observableArrayList(auditLogRepository.latest().stream()
+                    .limit(8)
+                    .map(log -> log.createdAt().format(auditFormatter) + " - " + log.username() + " " + log.action() + " " + log.entity())
+                    .toList()));
+        } catch (Exception ex) {
+            totalProductsLabel.setText("-");
+            lowStockLabel.setText("-");
+        }
+    }
+
+    private void loadSuppliers() {
+        try {
+            supplierTable.setItems(FXCollections.observableArrayList(supplierRepository.findAll()));
+        } catch (Exception ex) {
+            supplierTable.setItems(FXCollections.emptyObservableList());
+        }
+    }
+
+    private void loadPurchaseOrders() {
+        try {
+            purchaseOrderTable.setItems(FXCollections.observableArrayList(purchaseOrderRepository.findAll()));
+        } catch (Exception ex) {
+            purchaseOrderTable.setItems(FXCollections.emptyObservableList());
+        }
+    }
+
+    private void loadNotifications() {
+        try {
+            notificationTable.setItems(FXCollections.observableArrayList(notificationRepository.latest()));
+        } catch (Exception ex) {
+            notificationTable.setItems(FXCollections.emptyObservableList());
+        }
+    }
+
+    private void loadStockHistory(Product product) {
+        if (product == null) {
+            stockHistoryTable.setItems(FXCollections.emptyObservableList());
+            return;
+        }
+        try {
+            stockHistoryTable.setItems(FXCollections.observableArrayList(stockHistoryRepository.forProduct(product.getId())));
+        } catch (Exception ex) {
+            stockHistoryTable.setItems(FXCollections.emptyObservableList());
+        }
+    }
+
+    private void loadUsers() {
+        if (!SessionService.requireUser().isAdmin()) {
+            return;
+        }
+        try {
+            userTable.setItems(FXCollections.observableArrayList(userRepository.findAll()));
+        } catch (Exception ex) {
+            AlertService.error(LanguageService.get("error.database"));
+        }
+    }
