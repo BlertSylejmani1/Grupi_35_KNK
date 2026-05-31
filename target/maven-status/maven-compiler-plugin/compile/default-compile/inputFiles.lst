@@ -2,7 +2,6 @@ C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinv
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\config\Database.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\controller\DashboardController.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\controller\LoginController.java
-C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\example\Main.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\model\AuditLog.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\model\NotificationItem.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\model\Product.java
@@ -19,3 +18,13 @@ C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinv
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\repository\StockHistoryRepository.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\repository\SupplierRepository.java
 C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\repository\UserRepository.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\AlertService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\EmailService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\ExportService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\LanguageService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\PasswordService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\QrCodeService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\SessionService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\service\StockAlertService.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\com\smartinventory\SmartInventoryApp.java
+C:\Users\blert\OneDrive\Documents\GitHub\Grupi_35_KNK\src\main\java\module-info.java

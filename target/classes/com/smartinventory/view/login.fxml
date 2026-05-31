@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.smartinventory.controller.LoginController" styleClass="login-screen">
+    <center>
+        <VBox alignment="CENTER" spacing="18" maxWidth="360" styleClass="login-panel">
+            <Label text="%app.title" styleClass="app-heading"/>
+            <Label text="%login.subtitle" styleClass="muted"/>
+            <TextField fx:id="usernameField" promptText="%login.username"/>
+            <PasswordField fx:id="passwordField" promptText="%login.password"/>
+            <TextField fx:id="visiblePasswordField" promptText="%login.password"/>
+            <HBox spacing="16">
+                <CheckBox fx:id="rememberCheckBox" text="%login.remember"/>
+                <CheckBox fx:id="showPasswordCheckBox" text="%login.showPassword"/>
+            </HBox>
+            <Button text="%login.button" onAction="#login" defaultButton="true" maxWidth="Infinity" styleClass="primary-button"/>
+            <Label fx:id="messageLabel" styleClass="error-text"/>
+            <padding>
+                <Insets top="28" right="28" bottom="28" left="28"/>
+            </padding>
+        </VBox>
+    </center>
+</BorderPane>
