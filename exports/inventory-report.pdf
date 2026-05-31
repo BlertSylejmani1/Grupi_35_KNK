@@ -1,0 +1,36 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 575 >>
+stream
+BT
+/F1 10 Tf
+40 760 Td
+(Smart Inventory Report\\nGenerated: 2026-05-30T13:18:25.4765273\\n\\nTotal products: 5\\nLow stock: 4\\nOut of stock: 2\\nTotal suppliers: 4\\n\\nElectronics: 3\\nOffice: 2\\n\\nProducts\\n5 | Wireless Keyboard | Electronics | Tech Supply | 5 | 19.99 | LOW_STOCK\\n4 | Desk Lamp | Office | LightCo | 5 | 24.99 | LOW_STOCK\\n3 | Notebook A5 | Office | Paper Pro | 35 | 2.20 | IN_STOCK\\n2 | USB-C Cable | Electronics | Cable House | 0 | 7.50 | OUT_OF_STOCK\\n1 | Wireless Mouse | Electronics | Tech Supply | 0 | 14.99 | OUT_OF_STOCK\\n) Tj
+0 -14 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000866 00000 n 
+trailer << /Size 6 /Root 1 0 R >>
+startxref
+936
+%%EOF

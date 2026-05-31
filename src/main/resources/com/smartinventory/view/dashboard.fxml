@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.smartinventory.controller.DashboardController">
+    <top>
+        <VBox>
+            <MenuBar>
+                <Menu text="%menu.file">
+                    <MenuItem text="%menu.logout" onAction="#logout"/>
+                </Menu>
+                <Menu text="%menu.products">
+                    <MenuItem text="%nav.products" onAction="#showProductsTab"/>
+                    <MenuItem text="%toolbar.add" onAction="#addProduct"/>
+                    <MenuItem text="%toolbar.edit" onAction="#editProduct"/>
+                    <MenuItem text="%toolbar.delete" onAction="#deleteProduct"/>
+                </Menu>
+                <Menu text="%menu.reports">
+                    <MenuItem text="%nav.reports" onAction="#showReportsTab"/>
+                    <MenuItem text="%export.pdf" onAction="#exportPdf"/>
+                    <MenuItem text="%export.excel" onAction="#exportExcel"/>
+                </Menu>
+                <Menu text="%menu.settings">
+                    <MenuItem text="%nav.settings" onAction="#showSettingsTab"/>
+                    <MenuItem text="%nav.users" onAction="#addUser"/>
+                </Menu>
+                <Menu text="%menu.help">
+                    <MenuItem text="%menu.help.open" onAction="#showHelp"/>
+                </Menu>
+                <Menu text="%menu.language">
+                    <MenuItem text="English" onAction="#english"/>
+                    <MenuItem text="Shqip" onAction="#albanian"/>
+                </Menu>
+            </MenuBar>
+            <ToolBar>
+                <Button fx:id="addButton" text="%toolbar.add" onAction="#addProduct"/>
+                <Button fx:id="editButton" text="%toolbar.edit" onAction="#editProduct"/>
+                <Button fx:id="deleteButton" text="%toolbar.delete" onAction="#deleteProduct"/>
+                <Separator/>
+                <TextField fx:id="searchField" promptText="%toolbar.search" prefWidth="260"/>
+                <ComboBox fx:id="categoryFilter" promptText="%product.category" prefWidth="180"/>
+                <Button text="%toolbar.clear" onAction="#clearFilter"/>
+                <Button text="%toolbar.refresh" onAction="#refresh"/>
+                <Button text="%qr.button" onAction="#showQrCode"/>
+                <Separator/>
+                <Button fx:id="addUserButton" text="%user.add" onAction="#addUser"/>
+                <Button fx:id="editUserButton" text="%user.edit" onAction="#editUser"/>
+                <Button fx:id="deleteUserButton" text="%user.delete" onAction="#deleteUser"/>
+            </ToolBar>
+        </VBox>
+    </top>
+    <left>
+        <VBox spacing="8" styleClass="sidebar">
+            <Label text="%nav.dashboard" styleClass="sidebar-title"/>
+            <Button text="%nav.products" onAction="#showProductsTab" maxWidth="Infinity"/>
+            <Button text="%nav.reports" onAction="#showReportsTab" maxWidth="Infinity"/>
+            <Button text="%nav.suppliers" onAction="#showSuppliersTab" maxWidth="Infinity"/>
+            <Button text="%nav.purchaseOrders" onAction="#showPurchaseOrdersTab" maxWidth="Infinity"/>
+            <Button text="%nav.stockHistory" onAction="#showStockHistoryTab" maxWidth="Infinity"/>
+            <Button text="%nav.notifications" onAction="#showNotificationsTab" maxWidth="Infinity"/>
+            <Button text="%nav.users" onAction="#showUsersTab" maxWidth="Infinity"/>
+            <Button text="%nav.audit" onAction="#showAuditTab" maxWidth="Infinity"/>
+            <Button text="%nav.settings" onAction="#showSettingsTab" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+    <center>
+        <TabPane fx:id="mainTabs" tabClosingPolicy="UNAVAILABLE">
+            <Tab fx:id="productsTab" text="%nav.products">
+                <VBox spacing="10" styleClass="content">
+                    <GridPane hgap="8" vgap="8">
+                        <TextField fx:id="advancedNameField" promptText="%product.name" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <TextField fx:id="advancedSupplierField" promptText="%product.supplier" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <TextField fx:id="minPriceField" promptText="%search.minPrice" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                        <TextField fx:id="maxPriceField" promptText="%search.maxPrice" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                        <TextField fx:id="minStockField" promptText="%search.minStock" GridPane.columnIndex="4" GridPane.rowIndex="0"/>
+                        <TextField fx:id="maxStockField" promptText="%search.maxStock" GridPane.columnIndex="5" GridPane.rowIndex="0"/>
+                        <Button text="%toolbar.search" onAction="#advancedSearch" GridPane.columnIndex="6" GridPane.rowIndex="0"/>
+                        <Button text="%stock.adjust" onAction="#adjustStock" GridPane.columnIndex="7" GridPane.rowIndex="0"/>
+                        <Button text="%stock.history" onAction="#showSelectedProductHistory" GridPane.columnIndex="8" GridPane.rowIndex="0"/>
+                        <Button text="%po.reorder" onAction="#createReorder" GridPane.columnIndex="9" GridPane.rowIndex="0"/>
+                    </GridPane>
+                    <HBox spacing="14">
+                        <TableView fx:id="productTable" HBox.hgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="idColumn" text="%product.id" prefWidth="70"/>
+                                <TableColumn fx:id="nameColumn" text="%product.name" prefWidth="180"/>
+                                <TableColumn fx:id="categoryColumn" text="%product.category" prefWidth="150"/>
+                                <TableColumn fx:id="quantityColumn" text="%product.quantity" prefWidth="110"/>
+                                <TableColumn fx:id="priceColumn" text="%product.price" prefWidth="110"/>
+                                <TableColumn fx:id="supplierColumn" text="%product.supplier" prefWidth="180"/>
+                                <TableColumn fx:id="statusColumn" text="%product.status" prefWidth="140"/>
+                            </columns>
+                        </TableView>
+                    </HBox>
+                </VBox>
+            </Tab>
+            <Tab fx:id="reportsTab" text="%nav.reports">
+                <VBox spacing="16" styleClass="content">
+                    <HBox spacing="16">
+                        <VBox styleClass="metric">
+                            <Label text="%reports.total"/>
+                            <Label fx:id="totalProductsLabel" styleClass="metric-value"/>
+                        </VBox>
+                        <VBox styleClass="metric">
+                            <Label text="%reports.lowStock"/>
+                            <Label fx:id="lowStockLabel" styleClass="metric-value"/>
+                        </VBox>
+                        <VBox styleClass="metric">
+                            <Label text="%reports.outStock"/>
+                            <Label fx:id="outStockLabel" styleClass="metric-value"/>
+                        </VBox>
+                        <VBox styleClass="metric">
+                            <Label text="%reports.totalSuppliers"/>
+                            <Label fx:id="totalSuppliersLabel" styleClass="metric-value"/>
+                        </VBox>
+                        <VBox styleClass="metric">
+                            <Label text="%reports.totalUsers"/>
+                            <Label fx:id="totalUsersLabel" styleClass="metric-value"/>
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="10">
+                        <Button text="%export.pdf" onAction="#exportPdf"/>
+                        <Button text="%export.excel" onAction="#exportExcel"/>
+                    </HBox>
+                    <GridPane hgap="16" vgap="16">
+                        <PieChart fx:id="categoryPieChart" title="%reports.category" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <BarChart fx:id="stockBarChart" title="%reports.stock" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <xAxis><CategoryAxis/></xAxis>
+                            <yAxis><NumberAxis/></yAxis>
+                        </BarChart>
+                        <LineChart fx:id="stockLineChart" title="%reports.trend" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
+                            <xAxis><CategoryAxis/></xAxis>
+                            <yAxis><NumberAxis/></yAxis>
+                        </LineChart>
+                    </GridPane>
+                    <Label text="%activity.feed" styleClass="sidebar-title"/>
+                    <ListView fx:id="activityFeedList" prefHeight="130"/>
+                </VBox>
+            </Tab>
+            <Tab fx:id="suppliersTab" text="%nav.suppliers">
+                <VBox spacing="12" styleClass="content">
+                    <HBox spacing="10">
+                        <Button text="%supplier.add" onAction="#addSupplier"/>
+                        <Button text="%supplier.edit" onAction="#editSupplier"/>
+                        <Button text="%supplier.delete" onAction="#deleteSupplier"/>
+                    </HBox>
+                    <TableView fx:id="supplierTable">
+                        <columns>
+                            <TableColumn fx:id="supplierIdColumn" text="%product.id" prefWidth="80"/>
+                            <TableColumn fx:id="supplierNameColumn" text="%supplier.name" prefWidth="180"/>
+                            <TableColumn fx:id="supplierEmailColumn" text="%supplier.email" prefWidth="220"/>
+                            <TableColumn fx:id="supplierPhoneColumn" text="%supplier.phone" prefWidth="140"/>
+                            <TableColumn fx:id="supplierAddressColumn" text="%supplier.address" prefWidth="320"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+            <Tab fx:id="purchaseOrdersTab" text="%nav.purchaseOrders">
+                <VBox spacing="12" styleClass="content">
+                    <HBox spacing="10">
+                        <Button text="%po.reorderAll" onAction="#createReordersForLowStock"/>
+                        <Button text="%po.approve" onAction="#approvePurchaseOrder"/>
+                        <Button text="%po.receive" onAction="#receivePurchaseOrder"/>
+                    </HBox>
+                    <TableView fx:id="purchaseOrderTable">
+                        <columns>
+                            <TableColumn fx:id="poIdColumn" text="%product.id" prefWidth="80"/>
+                            <TableColumn fx:id="poSupplierColumn" text="%product.supplier" prefWidth="220"/>
+                            <TableColumn fx:id="poProductColumn" text="%product.name" prefWidth="220"/>
+                            <TableColumn fx:id="poQuantityColumn" text="%product.quantity" prefWidth="110"/>
+                            <TableColumn fx:id="poStatusColumn" text="%product.status" prefWidth="140"/>
+                            <TableColumn fx:id="poCreatedByColumn" text="%audit.user" prefWidth="160"/>
+                            <TableColumn fx:id="poCreatedAtColumn" text="%audit.time" prefWidth="180"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+            <Tab fx:id="stockHistoryTab" text="%nav.stockHistory">
+                <TableView fx:id="stockHistoryTable">
+                    <columns>
+                        <TableColumn fx:id="historyTimeColumn" text="%audit.time" prefWidth="170"/>
+                        <TableColumn fx:id="historyProductColumn" text="%product.id" prefWidth="90"/>
+                        <TableColumn fx:id="historyOldColumn" text="%history.old" prefWidth="110"/>
+                        <TableColumn fx:id="historyNewColumn" text="%history.new" prefWidth="110"/>
+                        <TableColumn fx:id="historyTypeColumn" text="%history.type" prefWidth="130"/>
+                        <TableColumn fx:id="historyByColumn" text="%history.by" prefWidth="140"/>
+                        <TableColumn fx:id="historyReasonColumn" text="%history.reason" prefWidth="360"/>
+                    </columns>
+                </TableView>
+            </Tab>
+            <Tab fx:id="notificationsTab" text="%nav.notifications">
+                <TableView fx:id="notificationTable">
+                    <columns>
+                        <TableColumn fx:id="notificationTimeColumn" text="%audit.time" prefWidth="170"/>
+                        <TableColumn fx:id="notificationTypeColumn" text="%notification.type" prefWidth="150"/>
+                        <TableColumn fx:id="notificationMessageColumn" text="%notification.message" prefWidth="450"/>
+                        <TableColumn fx:id="notificationEmailColumn" text="%notification.emailSent" prefWidth="130"/>
+                    </columns>
+                </TableView>
+            </Tab>
+            <Tab fx:id="usersTab" text="%nav.users">
+                <VBox spacing="12" styleClass="content">
+                    <HBox spacing="10">
+                        <Button text="%user.add" onAction="#addUser"/>
+                        <Button text="%user.edit" onAction="#editUser"/>
+                        <Button text="%user.delete" onAction="#deleteUser"/>
+                    </HBox>
+                    <TableView fx:id="userTable">
+                        <columns>
+                            <TableColumn fx:id="userIdColumn" text="%product.id" prefWidth="90"/>
+                            <TableColumn fx:id="usernameColumn" text="%login.username" prefWidth="260"/>
+                            <TableColumn fx:id="userRoleColumn" text="%user.role" prefWidth="180"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+            <Tab fx:id="auditTab" text="%nav.audit">
+                <TableView fx:id="auditTable">
+                    <columns>
+                        <TableColumn fx:id="auditTimeColumn" text="%audit.time" prefWidth="160"/>
+                        <TableColumn fx:id="auditUserColumn" text="%status.user" prefWidth="140"/>
+                        <TableColumn fx:id="auditActionColumn" text="%audit.action" prefWidth="120"/>
+                        <TableColumn fx:id="auditEntityColumn" text="%audit.entity" prefWidth="120"/>
+                        <TableColumn fx:id="auditDetailsColumn" text="%audit.details" prefWidth="420"/>
+                    </columns>
+                </TableView>
+            </Tab>
+            <Tab fx:id="settingsTab" text="%nav.settings">
+                <VBox spacing="16" styleClass="content">
+                    <VBox styleClass="metric">
+                        <Label text="%status.user"/>
+                        <Label fx:id="userLabel"/>
+                    </VBox>
+                    <VBox styleClass="metric">
+                        <Label text="%settings.database"/>
+                        <Label fx:id="dbStatusLabel"/>
+                    </VBox>
+                    <HBox spacing="10">
+                        <Button text="English" onAction="#english"/>
+                        <Button text="Shqip" onAction="#albanian"/>
+                        <Button fx:id="themeButton" text="%theme.toggle" onAction="#toggleTheme"/>
+                        <Button text="%menu.help.open" onAction="#showHelp"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+    <bottom>
+        <HBox spacing="20" styleClass="status-bar">
+            <Label text="%status.user"/>
+            <Label fx:id="footerUserLabel"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="timeLabel"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="footerDbStatusLabel"/>
+        </HBox>
+    </bottom>
+</BorderPane>
