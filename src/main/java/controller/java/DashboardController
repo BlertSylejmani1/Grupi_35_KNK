@@ -379,3 +379,4 @@ public class DashboardController {
                     private void showNotificationsTab() {
                         selectTab(notificationsTab);
                     }
+                    
